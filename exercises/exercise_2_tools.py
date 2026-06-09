@@ -26,8 +26,35 @@ LEGAL_KNOWLEDGE = [
             "(4) cover damages. Statute of limitations is typically 4 years (UCC § 2-725)."
         ),
     },
-    # TODO: Thêm entry về luật lao động Việt Nam
-    # Gợi ý: id="labor_law", keywords=["lao động", "sa thải", ...], text="..."
+    {
+        "id": "drug_possession",
+        "keywords": ["tàng trữ", "ma túy", "trái phép", "điều 249", "bộ luật hình sự"],
+        "text": (
+            "Theo Điều 249 Bộ luật Hình sự 2015 (sửa đổi, bổ sung 2017), tội tàng trữ trái phép chất ma túy "
+            "bị phạt tù từ 03 năm đến 05 năm đối với khối lượng ma túy nhỏ (ví dụ: Heroine từ 0,1g đến dưới 5g). "
+            "Phạm tội có tổ chức hoặc khối lượng lớn hơn (ví dụ: Heroine từ 5g đến dưới 30g) bị phạt tù từ 05 năm đến 10 năm. "
+            "Nếu khối lượng rất lớn (ví dụ: Heroine từ 100g trở lên) có thể bị phạt tù từ 15 năm đến 20 năm hoặc tù chung thân."
+        ),
+    },
+    {
+        "id": "drug_trafficking",
+        "keywords": ["vận chuyển", "mua bán", "ma túy", "điều 250", "điều 251"],
+        "text": (
+            "Theo Điều 250 và Điều 251 Bộ luật Hình sự 2015, tội vận chuyển và tội mua bán trái phép chất ma túy "
+            "có mức phạt cơ bản từ 03 năm đến 07 năm tù. Tuy nhiên, nếu phạm tội có tổ chức, qua biên giới, hoặc "
+            "khối lượng ma túy lớn, mức phạt có thể tăng lên 07 - 15 năm, 15 - 20 năm, tù chung thân hoặc tử hình. "
+            "Đặc biệt, mua bán Heroine từ 100g trở lên có thể đối mặt với án tử hình."
+        ),
+    },
+    {
+        "id": "drug_production",
+        "keywords": ["sản xuất", "ma túy", "trái phép", "điều 248"],
+        "text": (
+            "Điều 248 Bộ luật Hình sự quy định Tội sản xuất trái phép chất ma túy với mức phạt cơ bản từ 03 năm đến 07 năm tù. "
+            "Phạm tội có tổ chức, tái phạm nguy hiểm hoặc sản xuất số lượng lớn sẽ bị phạt tù từ 07 năm đến 15 năm. "
+            "Khối lượng cực lớn (ví dụ: Heroine 3kg trở lên) sẽ bị phạt tù chung thân hoặc tử hình."
+        ),
+    },
 ]
 
 
@@ -41,13 +68,52 @@ def search_legal_knowledge(query: str) -> str:
     return "Không tìm thấy thông tin liên quan."
 
 
-# TODO: Tạo tool check_statute_of_limitations
-# Gợi ý: nhận case_type (str), trả về thời hiệu khởi kiện
-# @tool
-# def check_statute_of_limitations(case_type: str) -> str:
-#     """Kiểm tra thời hiệu khởi kiện."""
-#     # YOUR CODE HERE
-#     pass
+@tool
+def check_statute_of_limitations(case_type: str) -> str:
+    """Kiểm tra thời hiệu khởi kiện.
+    
+    Args:
+        case_type: Loại vụ án (contract, tort, property)
+    """
+    limits = {
+        "contract": "4 năm (UCC § 2-725)",
+        "tort": "2-3 năm tùy bang",
+        "property": "5 năm",
+    }
+    return limits.get(case_type.lower(), "Không xác định")
+
+
+@tool
+def check_drug_penalty(crime_type: str, weight_grams: float) -> str:
+    """Kiểm tra mức phạt cơ bản đối với tội phạm về ma túy (đặc biệt là Heroine) dựa trên tội trạng và khối lượng.
+    
+    Args:
+        crime_type: Loại tội phạm (tang_tru, van_chuyen, mua_ban, san_xuat)
+        weight_grams: Khối lượng ma túy tính bằng gam
+    """
+    crime = crime_type.lower()
+    
+    if "tang_tru" in crime:
+        if weight_grams < 0.1: return "Chưa đến mức truy cứu hình sự (Xử lý hành chính)"
+        if weight_grams < 5: return "Phạt tù từ 01 năm đến 05 năm (Khoản 1 Điều 249)"
+        if weight_grams < 30: return "Phạt tù từ 05 năm đến 10 năm (Khoản 2 Điều 249)"
+        if weight_grams < 100: return "Phạt tù từ 10 năm đến 15 năm (Khoản 3 Điều 249)"
+        return "Phạt tù từ 15 năm đến 20 năm hoặc chung thân (Khoản 4 Điều 249)"
+        
+    if "mua_ban" in crime or "van_chuyen" in crime:
+        if weight_grams < 0.1: return "Chưa đến mức truy cứu hình sự (Xử lý hành chính)"
+        if weight_grams < 5: return "Phạt tù từ 02 năm đến 07 năm (Khoản 1 Điều 250/251)"
+        if weight_grams < 30: return "Phạt tù từ 07 năm đến 15 năm (Khoản 2 Điều 250/251)"
+        if weight_grams < 100: return "Phạt tù từ 15 năm đến 20 năm (Khoản 3 Điều 250/251)"
+        return "Phạt tù 20 năm, tù chung thân hoặc tử hình (Khoản 4 Điều 250/251)"
+        
+    if "san_xuat" in crime:
+        if weight_grams < 5: return "Phạt tù từ 03 năm đến 07 năm (Khoản 1 Điều 248)"
+        if weight_grams < 30: return "Phạt tù từ 07 năm đến 15 năm (Khoản 2 Điều 248)"
+        if weight_grams < 100: return "Phạt tù từ 15 năm đến 20 năm (Khoản 3 Điều 248)"
+        return "Phạt tù 20 năm, tù chung thân hoặc tử hình (Khoản 4 Điều 248)"
+        
+    return "Không tìm thấy thông tin cho loại tội này. Hỗ trợ: tang_tru, van_chuyen, mua_ban, san_xuat"
 
 
 async def main():
@@ -55,10 +121,11 @@ async def main():
     llm = get_llm()
     
     # TODO: Thêm tool mới vào danh sách
-    tools = [search_legal_knowledge]  # Thêm check_statute_of_limitations vào đây
+    tools = [search_legal_knowledge, check_statute_of_limitations, check_drug_penalty]  # Thêm check_drug_penalty vào đây
+
     llm_with_tools = llm.bind_tools(tools)
     
-    question = "Thời hiệu khởi kiện vụ vi phạm hợp đồng là bao lâu?"
+    question = "Nếu tôi bị bắt vì tàng trữ 40 gam Heroine thì bị phạt bao nhiêu năm tù?"
     
     messages = [
         SystemMessage(content="Bạn là chuyên gia pháp lý. Sử dụng tools để tra cứu thông tin."),
@@ -79,7 +146,8 @@ async def main():
             
             if tool_call["name"] == "search_legal_knowledge":
                 tool_result = search_legal_knowledge.invoke(tool_call["args"])
-            # TODO: Thêm xử lý cho check_statute_of_limitations
+            elif tool_call["name"] == "check_statute_of_limitations":
+                tool_result = check_statute_of_limitations.invoke(tool_call["args"])
             
             if tool_result:
                 messages.append(ToolMessage(content=tool_result, tool_call_id=tool_call["id"]))
